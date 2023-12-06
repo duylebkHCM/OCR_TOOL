@@ -88,11 +88,11 @@ def process_setup(*args):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", default='/media/duyla4/DATA/dataset/PROJECT_DATASET/ocr_tool/text_renderer/config/mozambique_synthesize/config.py', help="python file path")
-    parser.add_argument("--dataset_path", type=str, default='/media/duyla4/DATA/dataset/PROJECT_DATASET/EKYC/MOVITEL/CARD/final_data/sync_corpus.txt')
-    parser.add_argument("--root_dir", type=str, default='/media/duyla4/DATA/dataset/PROJECT_DATASET/EKYC/MOVITEL/CARD/final_data')
-    parser.add_argument("--save_dir", type=str, default='output')
-    parser.add_argument("--num_processes", type=int, default=4)
+    parser.add_argument("--config", default=None, help="python file path")
+    parser.add_argument("--dataset_path", type=str, default=None)
+    parser.add_argument("--root_dir", type=str, default=None)
+    parser.add_argument("--save_dir", type=str, default=None)
+    parser.add_argument("--num_processes", type=int, default=0)
     return parser.parse_args()
 
 
