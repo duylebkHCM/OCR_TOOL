@@ -1,0 +1,2 @@
+corpus/sample1.txt
+corpus/sample2.txt
