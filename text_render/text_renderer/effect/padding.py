@@ -12,7 +12,7 @@ from .base_effect import Effect
 
 class Padding(Effect):
     def __init__(
-        self, p=0.5, w_ratio=(0.0, 0.05), h_ratio=(0.0, 0.3), center: bool = False
+        self, p=0.5, w_ratio=(0.0, 0.05), h_ratio=(0.1, 0.3), center: bool = False
     ):
         """
 
@@ -29,14 +29,14 @@ class Padding(Effect):
         """
 
         super().__init__(p)
-        self.w_ratio = w_ratio
+        self.w_ratio = h_ratio
         self.h_ratio = h_ratio
         self.center = center
 
     def apply(self, img: PILImage, text_bbox: BBox) -> Tuple[PILImage, BBox]:
         w_ratio = np.random.uniform(*self.w_ratio)
         h_ratio = np.random.uniform(*self.h_ratio)
-        new_w = int(img.width + img.width * w_ratio)
+        new_w = int(img.width + img.height * w_ratio)
         new_h = int(img.height + img.height * h_ratio)
 
         new_img = transparent_img((new_w, new_h))

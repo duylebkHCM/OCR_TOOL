@@ -92,7 +92,7 @@ def draw_bbox(img, bbox, color):
     return draw_box(img, pnts, color)
 
 
-def random_xy_offset(small_size, big_size) -> Tuple[int, int]:
+def random_xy_offset(small_size, big_size, y_min_threshold=0.15) -> Tuple[int, int]:
     """
     Get random left-top point for putting a small rect in a large rect.
     Args:
@@ -115,7 +115,8 @@ def random_xy_offset(small_size, big_size) -> Tuple[int, int]:
 
     y_offset = 0
     if y_max_offset != 0:
-        y_offset = random.randint(0, y_max_offset)
+        min_y_offset = int(y_min_threshold*y_max_offset)
+        y_offset = random.randint(min_y_offset, y_max_offset)
 
     x_offset = 0
     if x_max_offset != 0:

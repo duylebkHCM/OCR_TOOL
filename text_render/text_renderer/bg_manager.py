@@ -18,7 +18,7 @@ class BgManager:
         self.bg_imgs: List[PILImage] = []
         self.pre_load = pre_load
 
-        for p in bg_dir.glob("**/*"):
+        for p in bg_dir.rglob("*.*g"):
             if p.suffix in IMAGE_EXTENSIONS:
                 if self._is_transparent_image(p):
                     logger.warning(f"Ignore transparent background image, please convert is to JPEG: {p}")

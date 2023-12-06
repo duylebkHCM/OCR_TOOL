@@ -87,7 +87,7 @@ class Render:
             logger.exception(e)
             raise e
 
-    def gen_single_corpus(self) -> Tuple[PILImage, str, PILImage, PILImage]:
+    def gen_single_corpus(self) -> Tuple[PILImage, str, PILImage, PILImage]:        
         font_text = self.corpus.sample()
 
         bg = self.bg_manager.get_bg()
