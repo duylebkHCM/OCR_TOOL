@@ -10,36 +10,40 @@ from text_renderer.effect import *
 from text_renderer.corpus import *
 from text_renderer.config import (
     RenderCfg,
-    GenerateCfgV2,
+    GenerateCfg,
     SimpleTextColorCfg
 )
 import imgaug.augmenters as iaa
 
-
-__all__ = ['blur', 'gaussblur', 'dropout_rand', 'dropout_horizontal', 'dropout_vertical', 'line', 'padding']
+__all__ = [
+    "dropout_rand",
+    "dropout_horizontal",
+    "dropout_vertical",
+    "line",
+    "blur",
+    "gaussblur",
+    "padding"
+]
 
 CURRENT_DIR = Path(os.path.abspath(os.path.dirname(__file__)))
 BG_DIR = CURRENT_DIR / "bg"
-
+TEXT_DIR = CURRENT_DIR / "text"
 
 font_cfg = dict(
-    font_dir=CURRENT_DIR / "fonts",
+    font_dir=CURRENT_DIR / "font",
     font_size=(29, 30),
 )
 
-def base_cfg(text_paths: List[Path], name=None):
-    assert len(text_paths) == 1
-    
-    return GenerateCfgV2(
-        num_image=1,
-        save_image_name=os.path.basename(text_paths[0])[:-4]  + name,
+def base_cfg():    
+    return GenerateCfg(
         render_cfg=RenderCfg(
             bg_dir=BG_DIR,
             corpus=EnumCorpus(
                 EnumCorpusCfg(
-                    text_paths=text_paths,
+                    text_paths=list(TEXT_DIR.rglob("*.txt")),
                     chars_file=CURRENT_DIR / "char" / "vocab.txt",
                     text_color_cfg=SimpleTextColorCfg(),
+                    filter_by_chars=False,
                     **font_cfg,
                 ),
             ),
@@ -50,27 +54,30 @@ def base_cfg(text_paths: List[Path], name=None):
     )
 
 
-def dropout_rand(text_paths: List[Path]):
-    cfg = base_cfg(text_paths, inspect.currentframe().f_code.co_name)
+def dropout_rand():
+    cfg = base_cfg()
     cfg.render_cfg.corpus_effects = Effects(DropoutRand(p=1, dropout_p=(0.3, 0.5)))
+    cfg.cfg_name=inspect.currentframe().f_code.co_name
     return cfg
 
 
-def dropout_horizontal(text_paths):
-    cfg = base_cfg(text_paths, inspect.currentframe().f_code.co_name)
+def dropout_horizontal():
+    cfg = base_cfg()
     cfg.render_cfg.corpus_effects = Effects(
         DropoutHorizontal(p=1, num_line=2, thickness=3)
     )
+    cfg.cfg_name=inspect.currentframe().f_code.co_name
     return cfg
 
 
-def dropout_vertical(text_paths):
-    cfg = base_cfg(text_paths, inspect.currentframe().f_code.co_name)
+def dropout_vertical():
+    cfg = base_cfg()
     cfg.render_cfg.corpus_effects = Effects(DropoutVertical(p=1, num_line=15))
+    cfg.cfg_name=inspect.currentframe().f_code.co_name
     return cfg
 
 
-def line(text_paths):
+def line():
     poses = [
         "top",
         "bottom",
@@ -91,17 +98,17 @@ def line(text_paths):
             pos_p[i] = 1
         else:
             continue
-        cfg = base_cfg(text_paths, f"{inspect.currentframe().f_code.co_name}_{pos}")
+        cfg = base_cfg()
         cfg.render_cfg.corpus_effects = Effects(
             Line(p=1, thickness=(3, 4), line_pos_p=pos_p)
         )
+        cfg.cfg_name=f'{inspect.currentframe().f_code.co_name}_{pos}'
         cfgs.append(cfg)
     return cfgs
 
 
-def blur(text_paths):
-
-    cfg = base_cfg(text_paths, inspect.currentframe().f_code.co_name)
+def blur():
+    cfg = base_cfg()
     cfg.render_cfg.corpus_effects = Effects(
         [
             ImgAugEffect(
@@ -114,11 +121,12 @@ def blur(text_paths):
             ),
         ]
     )
+    cfg.cfg_name=inspect.currentframe().f_code.co_name
     return cfg
 
 
-def gaussblur(text_paths):
-    cfg = base_cfg(text_paths, inspect.currentframe().f_code.co_name)
+def gaussblur():
+    cfg = base_cfg()
     cfg.render_cfg.corpus_effects = Effects(
         [
             ImgAugEffect(
@@ -131,14 +139,16 @@ def gaussblur(text_paths):
             ),
         ]
     )
+    cfg.cfg_name=inspect.currentframe().f_code.co_name
     return cfg
 
 
-def padding(text_paths):
-    cfg = base_cfg(text_paths, inspect.currentframe().f_code.co_name)
+def padding():
+    cfg = base_cfg()
     cfg.render_cfg.corpus_effects = Effects(
         [
-            Padding(p=1.0, h_ratio=(0.2, 0.5))
+            Padding(p=1.0, h_ratio=(0.25, 0.5))
         ]
     )
+    cfg.cfg_name=inspect.currentframe().f_code.co_name
     return cfg

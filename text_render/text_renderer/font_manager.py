@@ -39,7 +39,7 @@ class FontManager:
                 else:
                     raise PanicError(f"font file not exist: {font_path}")
         else:
-            for font_path in font_dir.glob("**/*"):
+            for font_path in font_dir.rglob("*"):
                 if font_path.suffix in [".ttc", ".TTC", ".ttf", ".TTF", ".otf", ".OTF"]:
                     self.font_paths.append(str(font_path))
 

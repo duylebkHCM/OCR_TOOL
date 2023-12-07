@@ -109,12 +109,20 @@ class SimpleTextColorCfg(TextColorCfg):
 
     def get_color(self, bg_img: PILImage) -> Tuple[int, int, int, int]:
         np_img = np.array(bg_img)
-        mean = np.mean(np_img)
+
+        # Calculate the luminance of the background color
+        bg_luminance = np.mean(np_img)
+
+        # Ensure a significant contrast by choosing a luminance that is far from the background
+        fg_luminance = np.random.uniform(0.2, 0.8) * bg_luminance
 
         alpha = np.random.randint(*self.alpha)
-        r = np.random.randint(0, int(mean * 0.8))
-        g = np.random.randint(0, int(mean * 0.8))
-        b = np.random.randint(0, int(mean * 0.8))
+
+        # Generate random RGB values with a luminance significantly different from the background
+        r = int(np.random.uniform(0.2, 0.8) * fg_luminance)
+        g = int(np.random.uniform(0.2, 0.8) * fg_luminance)
+        b = int(np.random.uniform(0.2, 0.8) * fg_luminance)
+
         text_color = (r, g, b, alpha)
 
         return text_color
@@ -127,9 +135,8 @@ class RenderCfg:
 
     Parameters
     ----------
-    corpus : Union[Corpus, List[Corpus]]
-
-    corpus_effects : Union[Effects, List[Effects]]
+    corpus : Corpus
+    corpus_effects : Effects
         Effects apply on text mask image of each corpus.
         Effects used at this stage must return changed bbox of text if it modified it.
     bg_dir : Path
@@ -154,76 +161,30 @@ class RenderCfg:
     return_bg_and_mask: bool
     """
 
-    corpus: Union["Corpus", List["Corpus"]]
-    corpus_effects: Union[Effects, List[Effects]] = None
+    corpus: "Corpus"
+    corpus_effects: Effects = None
     bg_dir: Path = None
     pre_load_bg_img: bool = True
     layout: Layout = SameLineLayout()
     perspective_transform: PerspectiveTransformCfg = None
     layout_effects: Effects = None
     render_effects: Effects = None
-    height: int = 32
+    height: int = -1
     gray: bool = True
     text_color_cfg: TextColorCfg = None
     return_bg_and_mask: bool = False
 
 
-# noinspection PyUnresolvedReferences
 @dataclass
-class GeneratorCfg:
+class GenerateCfg:
     """
     Parameters
     ----------
-    num_image : int
-        Number of images generated
-    save_dir : Path
-        The directory where the data is stored
     render_cfg : RenderCfg
         Configuration of Render
     """
-
-    num_image: int
-    save_dir: Path
-    render_cfg: RenderCfg
-
-
-@dataclass
-class GenerateCfgV2:
-    """
-    Parameters
-    ----------
-    num_image : int
-        Number of images generated
-    save_dir : Path
-        The directory where the data is stored
-    render_cfg : RenderCfg
-        Configuration of Render
-    """
-
-    num_image: int
-    save_image_name: str
-    render_cfg: RenderCfg
-
-
-def get_cfg(config_file: str) -> List[GeneratorCfg]:
-    """
-
-    Args:
-        config_file: full path of a config file
-
-    Returns:
-
-    """
-    module = import_module_from_file(config_file)
-    cfgs = getattr(module, "configs", None)
-    if cfgs is None:
-        raise RuntimeError(f"Load configs failed: {config_file}")
-
-    assert all(
-        [isinstance(cfg, GeneratorCfg) for cfg in cfgs]
-    ), "Please make sure all items in configs is GeneratorCfg"
-
-    return cfgs
+    cfg_name: str = None
+    render_cfg: RenderCfg = None
 
 
 def import_module_from_file(full_path_to_module):
@@ -238,7 +199,6 @@ def import_module_from_file(full_path_to_module):
         # Get module name and path from full path
         module_dir, module_file = os.path.split(full_path_to_module)
         module_name, module_ext = os.path.splitext(module_file)
-
         # Get module "spec" from filename
         spec = importlib.util.spec_from_file_location(module_name, full_path_to_module)
 

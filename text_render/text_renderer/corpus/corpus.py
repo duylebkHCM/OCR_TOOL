@@ -38,6 +38,8 @@ class CorpusCfg:
         horizontal : bool
             generate the horizontal(default) or vertical text
             Set False to generate vertical text
+        main_text (bool): If True, imply that this config is applied to the main text 
+                            instead of the background text in the extra textline layout
     """
     font_dir: Path
     font_size: Tuple[int, int]
@@ -46,6 +48,7 @@ class CorpusCfg:
     char_spacing: Union[float, Tuple[float, float]] = -1
     text_color_cfg: TextColorCfg = SimpleTextColorCfg()
     horizontal: bool = True
+    main_text: bool = True
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -69,7 +72,7 @@ class Corpus:
         )
 
     @retry
-    def sample(self):
+    def sample(self, idx=None):
         """
         This method ensures that the selected font supports all characters.
 
@@ -78,7 +81,7 @@ class Corpus:
 
         """
         try:
-            text = self.get_text()
+            text = self.get_text(idx)
         except Exception as e:
             logger.exception(e)
             raise RetryError()

@@ -17,8 +17,8 @@ class EnumCorpusCfg(CorpusCfg):
 
     args:
         text_paths (List[Path]): Text file paths
-        items (List[str]): Texts to choice. Only works if text_paths is empty
-        num_pick (int): Random choice {count} item from texts
+        main_text (bool): If True, imply that this config is applied to the main text 
+                            instead of the background text in the extra textline layout
         filter_by_chars (bool): If True, filtering text by character set
         chars_file (Path): Character set
         filter_font (bool): Only work when filter_by_chars is True. If True, filter font file
@@ -30,8 +30,6 @@ class EnumCorpusCfg(CorpusCfg):
     """
 
     text_paths: List[Path] = field(default_factory=list)
-    items: List[str] = field(default_factory=list)
-    num_pick: int = 1
     filter_by_chars: bool = False
     chars_file: Path = None
     filter_font: bool = False
@@ -48,11 +46,8 @@ class EnumCorpus(Corpus):
         super().__init__(cfg)
 
         self.cfg: EnumCorpusCfg
-        if len(self.cfg.text_paths) == 0 and len(self.cfg.items) == 0:
-            raise PanicError(f"text_paths or items must not be empty")
-
-        if len(self.cfg.text_paths) != 0 and len(self.cfg.items) != 0:
-            raise PanicError(f"only one of text_paths or items can be set")
+        if len(self.cfg.text_paths) == 0:
+            raise PanicError(f"text_paths must not be empty")
 
         self.texts: List[str] = []
 
@@ -61,9 +56,6 @@ class EnumCorpus(Corpus):
                 with open(str(text_path), "r", encoding="utf-8") as f:
                     for line in f.readlines():
                         self.texts.append(line.strip())
-
-        elif len(self.cfg.items) != 0:
-            self.texts = self.cfg.items
 
         if self.cfg.chars_file is not None:
             self.font_manager.update_font_support_chars(self.cfg.chars_file)
@@ -75,6 +67,9 @@ class EnumCorpus(Corpus):
                     self.cfg.filter_font_min_support_chars
                 )
 
-    def get_text(self):
-        text = random_choice(self.texts, self.cfg.num_pick)
+    def get_text(self, idx=None):
+        if idx is not None:
+            text = self.texts[idx]
+        else:
+            text = random_choice(self.texts, size=1)
         return self.cfg.join_str.join(text)

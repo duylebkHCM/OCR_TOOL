@@ -46,12 +46,12 @@ class Render:
         self.bg_manager = BgManager(cfg.bg_dir, cfg.pre_load_bg_img)
 
     @retry
-    def __call__(self, *args, **kwargs) -> Tuple[np.ndarray, str]:
+    def __call__(self, idx, *args, **kwargs) -> Tuple[np.ndarray, str]:
         try:
             if self._should_apply_layout():
-                img, text, cropped_bg, transformed_text_mask = self.gen_multi_corpus()
+                img, text, cropped_bg, transformed_text_mask = self.gen_multi_corpus(idx)
             else:
-                img, text, cropped_bg, transformed_text_mask = self.gen_single_corpus()
+                img, text, cropped_bg, transformed_text_mask = self.gen_single_corpus(idx)
 
             if self.cfg.render_effects is not None:
                 img, _ = self.cfg.render_effects.apply_effects(
@@ -87,8 +87,8 @@ class Render:
             logger.exception(e)
             raise e
 
-    def gen_single_corpus(self) -> Tuple[PILImage, str, PILImage, PILImage]:        
-        font_text = self.corpus.sample()
+    def gen_single_corpus(self, idx) -> Tuple[PILImage, str, PILImage, PILImage]:        
+        font_text = self.corpus.sample(idx)
 
         bg = self.bg_manager.get_bg()
         if self.cfg.text_color_cfg is not None:
@@ -128,8 +128,17 @@ class Render:
 
         return img, font_text.text, cropped_bg, transformed_text_mask
 
-    def gen_multi_corpus(self) -> Tuple[PILImage, str, PILImage, PILImage]:
-        font_texts: List[FontText] = [it.sample() for it in self.corpus]
+    def _should_apply_layout(self) -> bool:
+        return isinstance(self.corpus, list) and len(self.corpus) > 1
+    
+    def gen_multi_corpus(self, idx) -> Tuple[PILImage, str, PILImage, PILImage]:
+        font_texts: List[FontText] = []
+        for it in self.corpus:
+            if it.cfg.main_text:
+                font_text = it.sample(idx)
+            else:
+                font_text = it.sample()
+            font_texts.append(font_text)
 
         bg = self.bg_manager.get_bg()
 
@@ -192,7 +201,7 @@ class Render:
         img, cropped_bg = self.paste_text_mask_on_bg(bg, transformed_text_mask)
 
         return img, merged_text, cropped_bg, transformed_text_mask
-
+    
     def paste_text_mask_on_bg(
         self, bg: PILImage, transformed_text_mask: PILImage
     ) -> Tuple[PILImage, PILImage]:
@@ -236,9 +245,6 @@ class Render:
         fg_text_color = (r, g, b, alpha)
 
         return fg_text_color
-
-    def _should_apply_layout(self) -> bool:
-        return isinstance(self.corpus, list) and len(self.corpus) > 1
 
     def norm(self, image: np.ndarray) -> np.ndarray:
         if self.cfg.gray:
