@@ -1,9 +1,8 @@
 import copy
 from dataclasses import dataclass
-from typing import Tuple, List
+from typing import List, Tuple
 
 import numpy as np
-
 from text_renderer.utils.types import Point
 
 
@@ -72,10 +71,10 @@ class BBox:
 
     @staticmethod
     def from_bboxes(boxes: List["BBox"]) -> "BBox":
-        left = max(min([it.left for it in boxes]), 0)
-        top = max(min([it.top for it in boxes]), 0)
-        right = max([it.right for it in boxes])
-        bottom = max([it.bottom for it in boxes])
+        left = max(min(it.left for it in boxes), 0)
+        top = max(min(it.top for it in boxes), 0)
+        right = max(it.right for it in boxes)
+        bottom = max(it.bottom for it in boxes)
         return BBox(left, top, right, bottom)
 
     @staticmethod

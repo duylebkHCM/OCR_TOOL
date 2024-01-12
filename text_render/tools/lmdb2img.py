@@ -1,9 +1,9 @@
 import os
-import cv2
 
+import cv2
 import fire
-from tqdm import tqdm
 from text_renderer.dataset import LmdbDataset
+from tqdm import tqdm
 
 
 def hello(name="World"):
@@ -28,7 +28,7 @@ def lmdb2img(input: str, output: str, num: int = -1):
 
         print(f"Total count: {count}, will convert: {convert_count}")
         for i in tqdm(range(convert_count)):
-            num = "{:09d}".format(i)
+            num = f"{i:09d}"
             ret = db.read(num)
             label = ret["label"]
             image = ret["image"]

@@ -3,7 +3,6 @@ from typing import Tuple
 
 import numpy as np
 from PIL import ImageDraw
-
 from text_renderer.utils.bbox import BBox
 from text_renderer.utils.draw_utils import transparent_img
 from text_renderer.utils.types import PILImage
@@ -24,7 +23,7 @@ class Line(Effect):
         tb_in_offset=(0, 3),
         tb_out_offset=(0, 3),
         line_pos_p=(0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1),
-        color_cfg: 'TextColorCfg' = None,
+        color_cfg: "TextColorCfg" = None,
     ):
         """
         Draw lines around text

@@ -1,20 +1,23 @@
-import cv2
-import sympy
-import random
 import itertools
-import numpy as np
+import random
 from typing import List, Tuple, Union
-from shapely.geometry import Polygon, box, Point
+
+import cv2
+import numpy as np
+import sympy
 from scipy.spatial import distance
+from shapely.geometry import Point, Polygon, box
 
 
 def to_crop(
     points: List[Tuple[float, float]],
     image_height: int,
     image_width: int,
-    pad_ratio: Union[List[float], Tuple[float, float], float] = 0.,
+    pad_ratio: Union[List[float], Tuple[float, float], float] = 0.0,
 ) -> List[Tuple[float, float]]:
-    if isinstance(pad_ratio, tuple) or (isinstance(pad_ratio, list) and len(pad_ratio) == 2):
+    if isinstance(pad_ratio, tuple) or (
+        isinstance(pad_ratio, list) and len(pad_ratio) == 2
+    ):
         pad_ratio = random.uniform(*pad_ratio)
 
     x1 = min(points, key=lambda p: p[0])[0]  # x top-left
@@ -34,15 +37,17 @@ def to_crop(
 
 def to_quad_slow(
     points: List[Tuple[float, float]],
-    pad_ratio: List[float] = [0., 0., 0., 0.],  # left, right, top, bottom
+    pad_ratio: List[float] = [0.0, 0.0, 0.0, 0.0],  # left, right, top, bottom
 ) -> List[Tuple[float, float]]:
     polygon = Polygon(points)
-    assert polygon.is_valid, 'polygon is invalid.'
+    assert polygon.is_valid, "polygon is invalid."
 
     # create all possible lines from convex points
     lines = []
     for i in range(len(points)):
-        line = sympy.Line2D(sympy.Point2D(points[i]), sympy.Point2D(points[(i + 1) % len(points)]))
+        line = sympy.Line2D(
+            sympy.Point2D(points[i]), sympy.Point2D(points[(i + 1) % len(points)])
+        )
         lines.append(line)
 
     # get candiate quadrangles from all lines
@@ -54,14 +59,21 @@ def to_quad_slow(
         point4 = line4.intersection(line1)
 
         four_points = [point1, point2, point3, point4]
-        if all([(len(point) == 1 and isinstance(point[0], sympy.Point2D)) for point in four_points]):
+        if all(
+            [
+                (len(point) == 1 and isinstance(point[0], sympy.Point2D))
+                for point in four_points
+            ]
+        ):
             candidate = [point[0].coordinates for point in four_points]
             if Polygon(candidate).is_valid:
                 candidates.append(candidate)
 
     # choose candidate quadrangle which has the highest iou with polygon
     chosen_quad = max(
-        candidates, key=lambda x: Polygon(x).intersection(polygon).area / Polygon(x).union(polygon).area
+        candidates,
+        key=lambda x: Polygon(x).intersection(polygon).area
+        / Polygon(x).union(polygon).area,
     )
 
     chosen_quad = pad_points(points=order_points(chosen_quad), pad_ratio=pad_ratio)
@@ -73,11 +85,10 @@ def to_quad_fast(
     points: List[Tuple[float, float]],
     image_height: int,
     image_width: int,
-    pad_ratio: List[float] = [0., 0., 0., 0.],  # left, right, top, bottom
+    pad_ratio: List[float] = [0.0, 0.0, 0.0, 0.0],  # left, right, top, bottom
 ) -> List[Tuple[float, float]]:
-
     poly = Polygon(points)
-    assert poly.is_valid, 'polygon is invalid.'
+    assert poly.is_valid, "polygon is invalid."
 
     # get convex hull of poly, and remove end point of convex (because begin point is same end point)
     points = list(poly.convex_hull.boundary.coords)[:-1]
@@ -86,16 +97,22 @@ def to_quad_fast(
     boundary = box(-image_width, -image_height, 2 * image_width, 2 * image_height)
 
     candidates = []
-    for (x, y, z, t) in itertools.combinations(range(len(points)), 4):
-        lines = [[points[x], points[(x + 1) % len(points)]],
-                 [points[y], points[(y + 1) % len(points)]],
-                 [points[z], points[(z + 1) % len(points)]],
-                 [points[t], points[(t + 1) % len(points)]]]
+    for x, y, z, t in itertools.combinations(range(len(points)), 4):
+        lines = [
+            [points[x], points[(x + 1) % len(points)]],
+            [points[y], points[(y + 1) % len(points)]],
+            [points[z], points[(z + 1) % len(points)]],
+            [points[t], points[(t + 1) % len(points)]],
+        ]
 
         candidate = []
         for i in range(4):
             point = intersect_point(lines[i], lines[(i + 1) % 4])
-            if (not point) or (point in candidate) or (not boundary.contains(Point(point))):
+            if (
+                (not point)
+                or (point in candidate)
+                or (not boundary.contains(Point(point)))
+            ):
                 break
             candidate.append(point)
 
@@ -105,7 +122,7 @@ def to_quad_fast(
     # choose candidate quadrangle which has the highest iou with polygon
     chosen_quad = max(
         candidates,
-        key=lambda x: Polygon(x).intersection(poly).area / Polygon(x).union(poly).area
+        key=lambda x: Polygon(x).intersection(poly).area / Polygon(x).union(poly).area,
     )
 
     chosen_quad = pad_points(points=chosen_quad, pad_ratio=pad_ratio)
@@ -114,10 +131,8 @@ def to_quad_fast(
 
 
 def intersect_point(
-    line1: List[Tuple[float, float]],
-    line2: List[Tuple[float, float]]
+    line1: List[Tuple[float, float]], line2: List[Tuple[float, float]]
 ) -> Tuple[float, float]:
-
     a1 = line1[1][1] - line1[0][1]
     b1 = line1[0][0] - line1[1][0]
     a2 = line2[1][1] - line2[0][1]
@@ -143,39 +158,27 @@ def to_warp(
 ) -> Tuple[np.ndarray, np.ndarray]:
     points = [sympy.Point2D(*point) for point in points]
 
-    avg_width = (float(points[0].distance(points[1])) + float(points[2].distance(points[3]))) / 2
-    avg_height = (float(points[0].distance(points[3])) + float(points[1].distance(points[2]))) / 2
+    avg_width = (
+        float(points[0].distance(points[1])) + float(points[2].distance(points[3]))
+    ) / 2
+    avg_height = (
+        float(points[0].distance(points[3])) + float(points[1].distance(points[2]))
+    ) / 2
 
-    rectangle = np.float32([[0, 0], [avg_width, 0], [avg_width, avg_height], [0, avg_height]])
+    rectangle = np.float32(
+        [[0, 0], [avg_width, 0], [avg_width, avg_height], [0, avg_height]]
+    )
     quadrangle = np.float32([point.coordinates for point in points])
 
     M = cv2.getPerspectiveTransform(quadrangle, rectangle)
-    warp = cv2.warpPerspective(
-        image, M, (int(avg_width), int(avg_height))
-    )
+    warp = cv2.warpPerspective(image, M, (int(avg_width), int(avg_height)))
 
     return warp, M
-
-def to_card(image, coord):
-    (x1, y1), (x2, y2), (x3, y3), (x4, y4) = coord
-    top_left_x = int(min([x1,x2,x3,x4]))
-    top_left_y = int(min([y1,y2,y3,y4]))
-    bot_right_x = int(max([x1,x2,x3,x4]))
-    bot_right_y = int(max([y1,y2,y3,y4]))
-
-    print(top_left_x)
-    print(top_left_y)
-    print(bot_right_x)
-    print(bot_right_y)
-
-    card_region = image[top_left_y:bot_right_y+1, top_left_x:bot_right_x+1]
-
-    return card_region
 
 
 def pad_points(
     points: List[Tuple[float, float]],
-    pad_ratio: Union[List[float], Tuple[float, float], float] = 0.,
+    pad_ratio: Union[List[float], Tuple[float, float], float] = 0.0,
 ) -> List[Tuple[float, float]]:
     tl, tr, br, bl = np.array(points)  # convert list to vector
 
@@ -209,7 +212,9 @@ def to_4points(points: List[Tuple[float, float]]) -> List[Tuple[float, float]]:
     return [(x1, y1), (x2, y1), (x2, y2), (x1, y2)]
 
 
-def to_perspective(points: List[Tuple[float, float]], matrix: np.ndarray) -> List[Tuple[float, float]]:
+def to_perspective(
+    points: List[Tuple[float, float]], matrix: np.ndarray
+) -> List[Tuple[float, float]]:
     points = np.float32([[point[0], point[1], 1] for point in points])
     points = matrix.dot(points.T)
     points = points / points[-1, :]
@@ -223,7 +228,7 @@ def centroid_poly(points: List[Tuple[float, float]]) -> Tuple[float, float]:
 
 
 def order_points(points: List[Tuple[float, float]]) -> List[Tuple[float, float]]:
-    assert len(points) == 4, 'Length of points must be 4'
+    assert len(points) == 4, "Length of points must be 4"
     tl = min(points, key=lambda p: p[0] + p[1])
     br = max(points, key=lambda p: p[0] + p[1])
     tr = max(points, key=lambda p: p[0] - p[1])

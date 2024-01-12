@@ -15,7 +15,11 @@ class Layout:
         return self.apply(text_bboxes, text_mask_bboxes), self.merge_texts(font_texts)
 
     @abstractmethod
-    def apply(self, text_bboxes: List[BBox], img_bboxes: List[BBox],) -> List[BBox]:
+    def apply(
+        self,
+        text_bboxes: List[BBox],
+        img_bboxes: List[BBox],
+    ) -> List[BBox]:
         """
 
         Parameters

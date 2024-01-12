@@ -1,1 +1,3 @@
 **/__pycache__/*
+**/text_render/config/
+**/preprocess_data/config/

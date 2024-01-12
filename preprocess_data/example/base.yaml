@@ -1,0 +1,13 @@
+raw_data_path:
+log_path:
+save_path:
+DIR_PREFIX: '*'
+process_only:
+extract_img_only:
+
+pad_info: [0.05, 0.05, 0.05, 0.05]
+
+regions:
+  PAGE:
+    - ^TEXTLINE
+    - ^TABLE

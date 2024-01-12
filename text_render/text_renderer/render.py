@@ -1,22 +1,20 @@
-from typing import Tuple, List
-
-from PIL import Image
-from loguru import logger
+from typing import List, Tuple
 
 import cv2
 import numpy as np
+from loguru import logger
+from PIL import Image
 from PIL.Image import Image as PILImage
 from PIL.ImageFont import FreeTypeFont
 from tenacity import retry
-
 from text_renderer.bg_manager import BgManager
 from text_renderer.config import RenderCfg
-from text_renderer.utils.draw_utils import draw_text_on_bg, transparent_img
 from text_renderer.utils import utils
-from text_renderer.utils.errors import PanicError
-from text_renderer.utils.math_utils import PerspectiveTransform
 from text_renderer.utils.bbox import BBox
+from text_renderer.utils.draw_utils import draw_text_on_bg, transparent_img
+from text_renderer.utils.errors import PanicError
 from text_renderer.utils.font_text import FontText
+from text_renderer.utils.math_utils import PerspectiveTransform
 from text_renderer.utils.types import FontColor, is_list
 
 
@@ -49,9 +47,16 @@ class Render:
     def __call__(self, idx, *args, **kwargs) -> Tuple[np.ndarray, str]:
         try:
             if self._should_apply_layout():
-                img, text, cropped_bg, transformed_text_mask = self.gen_multi_corpus(idx)
+                img, text, cropped_bg, transformed_text_mask = self.gen_multi_corpus(
+                    idx
+                )
             else:
-                img, text, cropped_bg, transformed_text_mask = self.gen_single_corpus(idx)
+                img, text, cropped_bg, transformed_text_mask = self.gen_single_corpus(
+                    idx
+                )
+
+            if img is None:
+                return None, None
 
             if self.cfg.render_effects is not None:
                 img, _ = self.cfg.render_effects.apply_effects(
@@ -79,7 +84,7 @@ class Render:
                 np_img = self.norm(np_img)
             else:
                 img = img.convert("RGB")
-                np_img = np.array(img)
+                np_img = np.array(img).astype("uint8")
                 np_img = cv2.cvtColor(np_img, cv2.COLOR_RGB2BGR)
                 np_img = self.norm(np_img)
             return np_img, text
@@ -87,8 +92,10 @@ class Render:
             logger.exception(e)
             raise e
 
-    def gen_single_corpus(self, idx) -> Tuple[PILImage, str, PILImage, PILImage]:        
+    def gen_single_corpus(self, idx) -> Tuple[PILImage, str, PILImage, PILImage]:
         font_text = self.corpus.sample(idx)
+        if font_text is None:
+            return None, None, None, None
 
         bg = self.bg_manager.get_bg()
         if self.cfg.text_color_cfg is not None:
@@ -130,7 +137,7 @@ class Render:
 
     def _should_apply_layout(self) -> bool:
         return isinstance(self.corpus, list) and len(self.corpus) > 1
-    
+
     def gen_multi_corpus(self, idx) -> Tuple[PILImage, str, PILImage, PILImage]:
         font_texts: List[FontText] = []
         for it in self.corpus:
@@ -201,7 +208,7 @@ class Render:
         img, cropped_bg = self.paste_text_mask_on_bg(bg, transformed_text_mask)
 
         return img, merged_text, cropped_bg, transformed_text_mask
-    
+
     def paste_text_mask_on_bg(
         self, bg: PILImage, transformed_text_mask: PILImage
     ) -> Tuple[PILImage, PILImage]:

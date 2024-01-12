@@ -36,7 +36,12 @@ class FontText:
             left, top, right, bottom = self.font.getmask(self.text).getbbox()
             return right - left, height
         else:
-            widths = [self.font.getsize(c)[0] - self.font.getoffset(c)[0] for c in self.text]
+            widths = [
+                self.font.getsize(c)[0] - self.font.getoffset(c)[0] for c in self.text
+            ]
             width = max(widths)
-            height = sum([self.font.getsize(c)[1] for c in self.text]) - self.font.getoffset(self.text[0])[1]
+            height = (
+                sum(self.font.getsize(c)[1] for c in self.text)
+                - self.font.getoffset(self.text[0])[1]
+            )
             return height, width

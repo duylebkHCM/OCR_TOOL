@@ -8,7 +8,6 @@ from typing import List, Tuple, Union
 
 import numpy as np
 from PIL.Image import Image as PILImage
-
 from text_renderer.effect import Effects
 from text_renderer.layout import Layout
 from text_renderer.layout.same_line import SameLineLayout
@@ -183,6 +182,7 @@ class GenerateCfg:
     render_cfg : RenderCfg
         Configuration of Render
     """
+
     cfg_name: str = None
     render_cfg: RenderCfg = None
 
@@ -195,7 +195,6 @@ def import_module_from_file(full_path_to_module):
     """
     module = None
     try:
-
         # Get module name and path from full path
         module_dir, module_file = os.path.split(full_path_to_module)
         module_name, module_ext = os.path.splitext(module_file)

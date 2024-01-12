@@ -1,13 +1,11 @@
 #!/usr/env/bin python3
+import math
 from functools import reduce
 from typing import Tuple
 
-import numpy as np
 import cv2
-import math
-
+import numpy as np
 from PIL import Image
-
 from text_renderer.config import PerspectiveTransformCfg
 from text_renderer.utils import utils
 
@@ -61,7 +59,7 @@ def get_rotate_matrix(x, y, z):
 # https://stackoverflow.com/questions/17087446/how-to-calculate-perspective-transform-for-opencv-from-rotation-angles
 # https://nbviewer.jupyter.org/github/manisoftwartist/perspectiveproj/blob/master/perspective.ipynb
 # http://planning.cs.uiuc.edu/node102.html
-class PerspectiveTransform(object):
+class PerspectiveTransform:
     def __init__(self, cfg: PerspectiveTransformCfg):
         self.x, self.y, self.z = cfg.get_xyz()
         self.scale = cfg.scale

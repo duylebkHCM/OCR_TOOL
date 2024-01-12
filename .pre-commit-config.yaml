@@ -1,0 +1,39 @@
+fail_fast: false
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: debug-statements #Check for debugger imports and breakpoint() in python files
+      - id: check-ast #Simply check whether files parse as valid python
+      - id: fix-byte-order-marker #removes UTF-8 byte order marker
+      - id: check-json
+      - id: detect-private-key # detect-private-key is not in repo
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: check-case-conflict #Check for files with names that would conflict on a case-insensitive filesystem like MacOS HFS+ or Windows FAT
+      - id: end-of-file-fixer #Makes sure files end in a newline and only a newline
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+  - repo: local
+    hooks:
+      - id: black # black is a pre-commit hook that runs to check for format issues
+        name: black
+        entry: black
+        language: system
+        types: [python]
+  - repo: https://github.com/asottile/blacken-docs
+    rev: v1.12.1
+    hooks:
+    -   id: blacken-docs #blacken-docs is a pre-commit hook that runs to check for issues in the docs
+        additional_dependencies: [black]
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort #isort is a pre-commit hook that runs to check for issues in imports and docstrings
+        args: ["--profile", "black", "--filter-files"]
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v2.37.0
+    hooks:
+      - id: pyupgrade #pyupgrade is a pre-commit hook that runs to check for issues in the code
+        args: [--py36-plus]

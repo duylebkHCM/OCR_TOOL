@@ -1,10 +1,9 @@
 from typing import Tuple
 
-from PIL import Image
-from imgaug.augmenters import Augmenter
 import imgaug.augmenters as iaa
 import numpy as np
-
+from imgaug.augmenters import Augmenter
+from PIL import Image
 from text_renderer.utils.bbox import BBox
 from text_renderer.utils.types import PILImage
 

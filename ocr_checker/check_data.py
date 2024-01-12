@@ -1,11 +1,12 @@
+import argparse
+import io
 import json
 import os
 from pathlib import Path
-import argparse
-import io
-from typing import Optional, List
-import json
+from typing import List, Optional
+
 import numpy as np
+import paramiko
 from PIL import Image
 from PIL.ImageQt import ImageQt
 from PyQt5.QtCore import QEvent, Qt, pyqtSignal
@@ -15,9 +16,9 @@ from PyQt5.QtGui import (
     QImage,
     QIntValidator,
     QKeyEvent,
+    QKeySequence,
     QPalette,
     QPixmap,
-    QKeySequence,
 )
 from PyQt5.QtWidgets import (
     QApplication,
@@ -33,7 +34,6 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-import paramiko
 
 
 def key_based_connect(host, username, port, private_key_path):
@@ -68,7 +68,7 @@ class Dataset:
     def __init__(
         self,
         list_file: Optional[Path] = None,
-        note_file: Optional[Path] = None,
+        delete_file_logging: Optional[Path] = None,
         image_dir: Optional[Path] = None,
         replace_texts: Optional[List] = [],
         label_dir: Optional[Path] = None,
@@ -81,7 +81,7 @@ class Dataset:
             context = (
                 client.open(list_file.as_posix(), mode="r")
                 if client is not None
-                else open(list_file.as_posix(), "r", encoding="utf-8")
+                else open(list_file.as_posix(), encoding="utf-8")
             )
             file_info = json.load(context)
             context.close()
@@ -92,7 +92,7 @@ class Dataset:
                     image_path, replace_texts, label_dir=None, client=client
                 )
                 textlines.append(textline)
-                if item.get('text', None) is not None:
+                if item.get("text", None) is not None:
                     predict_text.append(item["text"])
 
             self.textlines = textlines
@@ -103,11 +103,9 @@ class Dataset:
                 file_obj = (
                     client.open(list_file.as_posix(), mode="r").readlines()
                     if client is not None
-                    else open(list_file, "rt", encoding="utf-8").readlines()
+                    else open(list_file, encoding="utf-8").readlines()
                 )
-                image_lines = [
-                    image_dir.joinpath(line.strip()) for line in file_obj
-                ]
+                image_lines = [image_dir.joinpath(line.strip()) for line in file_obj]
             else:
                 if client is not None:
                     image_lines = client.listdir(image_dir.as_posix())
@@ -152,8 +150,11 @@ class Dataset:
 
             self.textlines = textlines
 
-        self.note_file = note_file
-        self.path2idx = {textline.image_path.as_posix():idx for idx, textline in enumerate(textlines)}
+        self.delete_file_logging = delete_file_logging
+        self.path2idx = {
+            textline.image_path.as_posix(): idx
+            for idx, textline in enumerate(textlines)
+        }
 
     def __getitem__(self, idx):
         if hasattr(self, "predict_text"):
@@ -169,14 +170,9 @@ class TextLine:
     def __init__(
         self,
         image_path: Path,
-        replace_texts=[
-            (
-                "/data/ocr/duyla4/Research/Sequence_Modeling/HW_OCR/",
-                "/media/huynhtruc0309/DATA/personal_project/competitions/bkai/hw_ocr/",
-            )
-        ],
-        label_dir=None,
-        client: paramiko.SFTPClient = None,
+        replace_texts: Optional[List] = None,
+        label_dir: Optional[Path] = None,
+        client: Optional[paramiko.SFTPClient] = None,
     ):
         if len(replace_texts):
             image_path = str(image_path).replace(*replace_texts[0])
@@ -204,7 +200,7 @@ class TextLine:
             ).readline()
             return textline.strip()
         else:
-            return open(self.txt_path, "rt", encoding="utf-8").readline().strip()
+            return open(self.txt_path, encoding="utf-8").readline().strip()
 
     def save(self, new_label):
         self.is_fix = True
@@ -227,7 +223,7 @@ class App(QMainWindow):
     def __init__(
         self,
         list_file: Optional[Path] = None,
-        note_file: Optional[Path] = None,
+        delete_file_logging: Optional[Path] = None,
         image_dir: Optional[Path] = None,
         replace_texts: Optional[List] = [],
         label_dir: Optional[Path] = None,
@@ -331,7 +327,12 @@ class App(QMainWindow):
         self.current_index = 0
 
         self.dataset = Dataset(
-            list_file, note_file, image_dir, replace_texts, label_dir, ssh_client
+            list_file,
+            delete_file_logging,
+            image_dir,
+            replace_texts,
+            label_dir,
+            ssh_client,
         )
 
         if len(self.dataset) == 0:
@@ -366,9 +367,9 @@ class App(QMainWindow):
         shortcut_vflip = QShortcut(QKeySequence("Ctrl+H"), self)
         shortcut_vflip.activated.connect(self.vflip)
 
-        shortcut_note = QShortcut(QKeySequence("Ctrl+D"), self)
-        shortcut_note.activated.connect(self.note)
-        self.note_file = self.dataset.note_file
+        shortcut_delete = QShortcut(QKeySequence("Ctrl+D"), self)
+        shortcut_delete.activated.connect(self.delete)
+        self.delete_file_logging = self.dataset.delete_file_logging
 
         self._is_rotate = False
         self._is_flip = False
@@ -392,7 +393,7 @@ class App(QMainWindow):
         path_ = str(self.current_path_label.text().strip())
         path_idx = self.dataset.path2idx[path_]
         self.set_step(path_idx)
-    
+
     def eventFilter(self, source, event):
         if event.type() == QEvent.KeyPress and source is self.label_text:
             if event.key() == Qt.Key_Down:
@@ -554,18 +555,18 @@ class App(QMainWindow):
             int(factor * scrollBar.value() + ((factor - 1) * scrollBar.pageStep() / 2))
         )
 
-    def note(self):
+    def delete(self):
         current_path = self.current_textline.image_path
-        logging_dir = self.note_file.parent
+        logging_dir = self.delete_file_logging.parent
         if not logging_dir.exists():
             logging_dir.mkdir(parents=True)
         print(f"remove_path: {current_path}")
         if self.ssh_client:
-            self.ssh_client.open(self.note_file.as_posix(), mode="a").write(
+            self.ssh_client.open(self.delete_file_logging.as_posix(), mode="a").write(
                 f"{current_path}\n"
             )
         else:
-            with open(self.note_file, mode="a") as f:
+            with open(self.delete_file_logging, mode="a") as f:
                 f.write(f"{current_path}\n")
 
 
@@ -573,19 +574,19 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--list_file",
-        default='/data/ocr/duyla3/DATASET/OCR/VTCC_DATA_HANDWRITING/labels/ocr_task/new_real_labels/kalapa/test.txt',
+        default=None,
         type=Path,
         help="Path to file contain list of image paths or JSON file contain image prediction information from LIB OCR",
     )
     parser.add_argument(
-        "--note_file",
+        "--delete_file_logging",
         default=None,
         type=Path,
         help="Path to logging file to store removed image path",
     )
     parser.add_argument(
         "--image_dir",
-        default='/data/ocr/duyla3/DATASET/OCR/VTCC_DATA_HANDWRITING/data/processed/real_data',
+        default=None,
         type=Path,
         help="Path to directory of image and label (optional) of dataset, do not provide if already set list_file argument",
     )
@@ -603,28 +604,26 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--server_name",
-        default='ocr_1',
+        default=None,
         help="Name of server in case of using data directly in server",
     )
     args = parser.parse_args()
 
     if args.server_name:
         ssh_path = Path(os.getenv("HOME")) / ".ssh" / "config"
-        ssh_config = list(map(lambda x: x.strip(), open(ssh_path, mode="r").readlines()))
+        ssh_config = list(map(lambda x: x.strip(), open(ssh_path).readlines()))
         server_info = [
             ssh_config[idx + 1 : idx + 5]
             for idx in range(len(ssh_config))
             if ssh_config[idx] == f"Host {args.server_name}"
         ]
         server_info = [line.strip().split()[-1] for line in server_info[0]]
-        server_dict = dict(
-            [
-                (param_name, ssh_value)
-                for param_name, ssh_value in zip(
-                    ["host", "username", "port", "private_key_path"], server_info
-                )
-            ]
-        )
+        server_dict = {
+            param_name: ssh_value
+            for param_name, ssh_value in zip(
+                ["host", "username", "port", "private_key_path"], server_info
+            )
+        }
         server_dict.update(
             {"private_key_path": ssh_path.parent.joinpath("id_rsa").as_posix()}
         )
@@ -638,7 +637,7 @@ if __name__ == "__main__":
     app = QApplication([])
     window = App(
         list_file=args.list_file,
-        note_file=args.note_file,
+        delete_file_logging=args.delete_file_logging,
         image_dir=args.image_dir,
         replace_texts=[] if not args.replace_text else [tuple(args.replace_text)],
         label_dir=args.label_dir,

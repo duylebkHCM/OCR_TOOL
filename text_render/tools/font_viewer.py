@@ -1,7 +1,10 @@
+import sys
 from pathlib import Path
 
-import typer
 import streamlit as st
+import typer
+
+sys.path.append(Path(__file__).parent.parent.as_posix())
 
 from text_renderer.font_manager import FontManager
 from text_renderer.utils import FontText

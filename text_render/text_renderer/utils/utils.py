@@ -1,5 +1,5 @@
 import random
-from typing import Tuple, Set
+from typing import Set, Tuple
 
 import cv2
 import numpy as np
@@ -115,7 +115,7 @@ def random_xy_offset(small_size, big_size, y_min_threshold=0.15) -> Tuple[int, i
 
     y_offset = 0
     if y_max_offset != 0:
-        min_y_offset = int(y_min_threshold*y_max_offset)
+        min_y_offset = int(y_min_threshold * y_max_offset)
         y_offset = random.randint(min_y_offset, y_max_offset)
 
     x_offset = 0
@@ -146,7 +146,7 @@ def load_chars_file(chars_file, log=False) -> Set:
 
     """
     assumed_space = False
-    with open(str(chars_file), "r", encoding="utf-8") as f:
+    with open(str(chars_file), encoding="utf-8") as f:
         lines = f.readlines()
         _lines = []
         for i, line in enumerate(lines):

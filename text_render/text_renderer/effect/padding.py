@@ -1,7 +1,6 @@
 from typing import Tuple
 
 import numpy as np
-
 from text_renderer.utils.bbox import BBox
 from text_renderer.utils.draw_utils import transparent_img
 from text_renderer.utils.types import PILImage

@@ -3,9 +3,9 @@ from typing import Tuple
 import cv2
 import numpy as np
 from PIL import Image
-
 from text_renderer.utils.bbox import BBox
 from text_renderer.utils.types import PILImage
+
 from .base_effect import Effect
 
 

@@ -17,7 +17,7 @@ class EnumCorpusCfg(CorpusCfg):
 
     args:
         text_paths (List[Path]): Text file paths
-        main_text (bool): If True, imply that this config is applied to the main text 
+        main_text (bool): If True, imply that this config is applied to the main text
                             instead of the background text in the extra textline layout
         filter_by_chars (bool): If True, filtering text by character set
         chars_file (Path): Character set
@@ -53,7 +53,7 @@ class EnumCorpus(Corpus):
 
         if len(self.cfg.text_paths) != 0:
             for text_path in self.cfg.text_paths:
-                with open(str(text_path), "r", encoding="utf-8") as f:
+                with open(str(text_path), encoding="utf-8") as f:
                     for line in f.readlines():
                         self.texts.append(line.strip())
 

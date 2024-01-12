@@ -1,9 +1,8 @@
 import random
 from abc import abstractmethod
-from typing import List, Union, Tuple
+from typing import List, Tuple, Union
 
 from PIL import PyAccess
-
 from text_renderer.effect.selector import Selector
 from text_renderer.utils.bbox import BBox
 from text_renderer.utils.types import PILImage

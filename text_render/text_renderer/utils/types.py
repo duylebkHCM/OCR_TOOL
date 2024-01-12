@@ -1,4 +1,5 @@
 from typing import Tuple
+
 from PIL.Image import Image
 
 # RGBA

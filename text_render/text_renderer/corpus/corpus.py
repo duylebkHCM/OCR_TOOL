@@ -6,11 +6,10 @@ from typing import Tuple, Union
 
 from loguru import logger
 from tenacity import retry, stop_after_attempt
-
+from text_renderer.config import SimpleTextColorCfg, TextColorCfg
 from text_renderer.font_manager import FontManager
-from text_renderer.config import TextColorCfg, SimpleTextColorCfg
-from text_renderer.utils.errors import RetryError, PanicError
 from text_renderer.utils import FontText
+from text_renderer.utils.errors import PanicError, RetryError
 from text_renderer.utils.utils import load_chars_file
 
 
@@ -38,7 +37,7 @@ class CorpusCfg:
         horizontal : bool
             generate the horizontal(default) or vertical text
             Set False to generate vertical text
-        main_text (bool): If True, imply that this config is applied to the main text 
+        main_text (bool): If True, imply that this config is applied to the main text
                             instead of the background text in the extra textline layout
     """
     font_dir: Path
@@ -64,11 +63,14 @@ class Corpus:
     """
 
     def __init__(
-        self, cfg: "CorpusCfg",
+        self,
+        cfg: "CorpusCfg",
     ):
         self.cfg = cfg
         self.font_manager = FontManager(
-            cfg.font_dir, cfg.font_list_file, cfg.font_size,
+            cfg.font_dir,
+            cfg.font_list_file,
+            cfg.font_size,
         )
 
     @retry
@@ -85,6 +87,9 @@ class Corpus:
         except Exception as e:
             logger.exception(e)
             raise RetryError()
+
+        if text is None or text == "":
+            return None
 
         if self.cfg.clip_length != -1 and len(text) > self.cfg.clip_length:
             text = text[: self.cfg.clip_length]

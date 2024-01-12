@@ -1,13 +1,12 @@
 import random
 from functools import lru_cache
 from pathlib import Path
-from typing import List, Set, Tuple, Dict, Optional
+from typing import Dict, List, Optional, Set, Tuple
 
+from fontTools.ttLib import TTCollection, TTFont
+from loguru import logger
 from PIL import ImageFont
 from PIL.ImageFont import FreeTypeFont
-from fontTools.ttLib import TTFont, TTCollection
-from loguru import logger
-
 from text_renderer.utils.errors import PanicError
 from text_renderer.utils.utils import load_chars_file
 
@@ -25,7 +24,7 @@ class FontManager:
         self.font_support_chars_intersection_with_chars: Dict[str, Set] = {}
 
         if font_list_file is not None:
-            with open(str(font_list_file), "r", encoding="utf-8") as f:
+            with open(str(font_list_file), encoding="utf-8") as f:
                 lines = f.readlines()
                 lines = [line.strip() for line in lines]
 
@@ -74,7 +73,7 @@ class FontManager:
             except AssertionError as e:
                 logger.error(f"Load font file {font_path} failed, skip it. Error: {e}")
 
-            supported_chars = set([chr(c_int) for c_int in chars_int])
+            supported_chars = {chr(c_int) for c_int in chars_int}
 
             ttf.close()
 

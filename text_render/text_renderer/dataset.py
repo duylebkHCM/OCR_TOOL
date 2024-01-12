@@ -1,9 +1,9 @@
-import os
 import json
+import os
 from typing import Dict
 
-import lmdb
 import cv2
+import lmdb
 import numpy as np
 
 
@@ -89,7 +89,7 @@ class ImgDataset(Dataset):
 
         self._data = {"num-samples": 0, "labels": {}, "sizes": {}}
         if os.path.exists(self._label_path):
-            with open(self._label_path, "r", encoding="utf-8") as f:
+            with open(self._label_path, encoding="utf-8") as f:
                 self._data = json.load(f)
 
     def write(self, name: str, image: np.ndarray, label: str):
@@ -176,13 +176,13 @@ class LmdbDataset(Dataset):
         return width, height
 
     def read_count(self) -> int:
-        count = self._lmdb_txn.get("num-samples".encode())
+        count = self._lmdb_txn.get(b"num-samples")
         if count is None:
             return 0
         return int(count)
 
     def write_count(self, count: int):
-        self._lmdb_txn.put("num-samples".encode(), str(count).encode())
+        self._lmdb_txn.put(b"num-samples", str(count).encode())
 
     def image_key(self, name: str):
         return f"image-{name}".encode()
