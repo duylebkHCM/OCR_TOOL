@@ -1,7 +1,7 @@
 import random
 from functools import lru_cache
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 from fontTools.ttLib import TTCollection, TTFont
 from loguru import logger
@@ -13,11 +13,15 @@ from text_renderer.utils.utils import load_chars_file
 
 class FontManager:
     def __init__(
-        self, font_dir: Path, font_list_file: Optional[Path], font_size: Tuple[int, int]
+        self,
+        font_dir: Path,
+        font_list_file: Optional[Path],
+        font_size: Union[Tuple[int, int], int],
     ):
-        assert font_size[0] < font_size[1]
-        self.font_size_min = font_size[0]
-        self.font_size_max = font_size[1]
+        if isinstance(font_size, tuple):
+            assert font_size[0] < font_size[1]
+        self.font_size_raw = font_size
+
         self.font_paths: List[str] = []
         self.font_support_chars_cache: Dict[str, Set] = {}
         # Created in self.update_font_support_chars(), used to filter font_path
@@ -46,7 +50,11 @@ class FontManager:
 
     def get_font(self) -> Tuple[FreeTypeFont, Set, str]:
         font_path = random.choice(self.font_paths)
-        font_size = random.randint(self.font_size_min, self.font_size_max)
+
+        if isinstance(self.font_size_raw, tuple):
+            font_size = random.randint(self.font_size_raw[0], self.font_size_raw[1])
+        else:
+            font_size = self.font_size_raw
 
         font = self._get_font(font_path, font_size)
         font_support_chars = self.font_support_chars_cache[font_path]

@@ -1,10 +1,11 @@
 import importlib
 import os
+import random
 import typing
 from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 from PIL.Image import Image as PILImage
@@ -90,10 +91,29 @@ class TextColorCfg:
 
 @dataclass
 class FixedTextColorCfg(TextColorCfg):
+    rgb_code: Optional[Tuple[int]] = None
+
     # For generate effect/layout example
     def get_color(self, bg_img: PILImage) -> Tuple[int, int, int, int]:
         alpha = 255
-        text_color = (255, 50, 0, alpha)
+        text_color = (*self.rgb_code, alpha)
+
+        return text_color
+
+
+@dataclass
+class RandTextColorCfg(TextColorCfg):
+    rgb_codes: Optional[List[Tuple[int]]] = None
+
+    # For generate effect/layout example
+    def get_color(self, bg_img: PILImage) -> Tuple[int, int, int, int]:
+        alpha = 255
+
+        if len(self.rgb_codes) == 0:
+            raise ValueError("Provide lit of RGB codes")
+
+        rgb_code = random.choice(self.rgb_codes)
+        text_color = (rgb_code, alpha)
 
         return text_color
 

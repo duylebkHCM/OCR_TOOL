@@ -7,7 +7,13 @@ from pathlib import Path
 from typing import List
 
 import imgaug.augmenters as iaa
-from text_renderer.config import GenerateCfg, RenderCfg, SimpleTextColorCfg
+from text_renderer.config import (
+    FixedTextColorCfg,
+    GenerateCfg,
+    RandTextColorCfg,
+    RenderCfg,
+    SimpleTextColorCfg,
+)
 from text_renderer.corpus import *
 from text_renderer.effect import *
 
@@ -21,6 +27,8 @@ __all__ = [
     "padding",
     "dropout_rand_padding",
     "dropout_rand_padding_blur",
+    "rand_color",
+    "fixed_color",
 ]
 
 CURRENT_DIR = Path(os.path.abspath(os.path.dirname(__file__)))
@@ -49,6 +57,7 @@ def base_cfg():
             pre_load_bg_img=True,
             gray=False,
         ),
+        cfg_name=inspect.currentframe().f_code.co_name,
     )
 
 
@@ -158,5 +167,19 @@ def dropout_rand_padding_blur():
         ]
     )
 
+    cfg.cfg_name = inspect.currentframe().f_code.co_name
+    return cfg
+
+
+def rand_color():
+    cfg = base_cfg()
+    cfg.render_cfg.text_color_cfg = RandTextColorCfg([(0, 0, 204), (0, 0, 0)])
+    cfg.cfg_name = inspect.currentframe().f_code.co_name
+    return cfg
+
+
+def fixed_color():
+    cfg = base_cfg()
+    cfg.render_cfg.text_color_cfg = FixedTextColorCfg(rgb_code=(40, 66, 131))
     cfg.cfg_name = inspect.currentframe().f_code.co_name
     return cfg
